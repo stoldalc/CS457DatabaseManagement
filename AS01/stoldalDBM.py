@@ -37,8 +37,11 @@ def useDB(cmd):
 
     DBName = cmdSplit[1]
 
+    #Adding the extenstion to the DB name
+    DBName += ".txt"
+
     #Check if database exist
-    if os.path.isdir(DBName):
+    if os.path.isfile(DBName):
         #If the database exist we then change the global scope to be in that directory
         currentDB = DBName
 
@@ -46,13 +49,13 @@ def useDB(cmd):
         #IF the database does not exist we prompt the user
         print("!Failed to use " + DBName +  " because it does not exist.")
 
+    #print("useDB" + cmd)
+
 
 
 
 #This function will create the database
 def createDatabase(cmd):
-
-    global currentDB
 
     #Seperating the command from the intended database    
     cmdSplit = cmd.split("CREATE DATABASE ")
@@ -60,16 +63,31 @@ def createDatabase(cmd):
     DBName = cmdSplit[1]
 
     #If the DB already exist tell the user 
-    if os.path.isdir(DBName):
+    if os.path.isfile(DBName):
         print("!Failed to create database " + DBName + " because it already exists.")
-    #Else if the database does not exist create the datbase(dir)
+    #Else if the database does not exist create the datbase(file)
     else:
-        os.mkdir(DBName)
-    
+        DBName += ".txt"
+        open(DBName, "x")
+
+
+    #print("createDatabase" + cmd)
+
 
 
 #This function will create a table within the current DB scope
 def createTable(cmd):
+    """
+    Idea - sepreate each table into a text file
+         - Each var is appended to the end of the text file
+    """
+
+    """
+    Idea 2 - more complicated
+           - each database is a textfile
+           - each table is listed in the same way as before
+           - Special charachters or char set to denote the begining and end of a table
+    """
     print("create table" + cmd)
 
 #This function delets a database and all tables within
@@ -82,12 +100,16 @@ def dropDatabase(cmd):
 
     DBName = cmdSplit[1]
 
+    DBName += ".txt"
+
     #If the DB exist the database will be deleted
-    if os.path.isdir(DBName):
+    if os.path.isfile(DBName):
         #Shutil.rmtree is used so that no error is prompted if the database contains tables(files)
-        shutil.rmtree(DBName)
+        os.remove(DBName)
     else:
         print("!Failed to delete " + DBName + " because it does not exist.")
+
+    #print("dropDatabase")
 
 
 #This function delets a specfic table within a database
@@ -117,7 +139,7 @@ def opLoop():
     while True:
 
         #Retreaving user input
-        userCommand = input("stoldalDBM-" + currentDB +":")
+        userCommand = input("stoldalDBM-" + currentDB.split('.')[0] +":")
 
         #Strips semicolons from command
         userCommand = userCommand.replace(';','')
