@@ -28,7 +28,7 @@ Needed functionallity
 currentDB = ""
 
 #For debuging
-printCommands = True
+printCommands = False
 
 
 
@@ -54,7 +54,7 @@ def useDB(cmd):
     if os.path.isfile(DBName):
         #If the database exist we then change the global scope to be in that directory
         currentDB = DBName
-        print("-- Using database " + DBName.split('.')[0] + ".")
+        print("-- Using Database " + DBName.split('.')[0] + ".")
 
     else:
         #IF the database does not exist we prompt the user
@@ -364,8 +364,8 @@ def alterTable(cmd):
                 #Insert the new variable
                 databaseCopy.insert(i, ("*" + var + '\n'))
 
-            #Break out of the loop if we have confirmed the table exist  
-            break
+                #Break out of the loop if we have confirmed the table exist  
+                break
         fp.close()
 
         #Check the flag to see if the table was succesfully found
@@ -423,8 +423,9 @@ def selectStar(cmd):
         for i in range(len(databaseCopy)):
 
             #Checking if the current line is the start of table
-            print("Comparing: " + databaseCopy[i] + " to " + (">>" + tableName + "\n"))
+            #print("Comparing: " + databaseCopy[i] + " to " + (">>" + tableName + "\n"))
             if databaseCopy[i] == (">>" + tableName + "\n"):
+            
                 doesTableExist = True
                 i += 1
 
@@ -433,7 +434,7 @@ def selectStar(cmd):
                     vars.append(databaseCopy[i][1:])
                  
                     i += 1
-            break
+                break
         
         #If the doesTableExist flag is set print out the vars list
         if doesTableExist:
