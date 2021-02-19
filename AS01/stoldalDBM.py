@@ -28,7 +28,7 @@ Needed functionallity
 currentDB = ""
 
 #For debuging
-printCommands = False
+printCommands = True
 
 
 
@@ -58,7 +58,7 @@ def useDB(cmd):
 
     else:
         #IF the database does not exist we prompt the user
-        print("-- !Failed to use " + DBName +  " because it does not exist.")
+        print("-- !Failed to use " + "\'" + DBName + "\'" +  " because it does not exist.")
 
     #print("useDB" + cmd)
 
@@ -77,6 +77,7 @@ def createDatabase(cmd):
     cmdSplit = cmd.split("CREATE DATABASE ")
 
     DBName = cmdSplit[1]
+    DBName = DBName.strip()
 
     #If the DB already exist tell the user 
     if os.path.isfile(DBName+".txt"):
@@ -312,7 +313,7 @@ def dropTable(cmd):
             print("-- Table " + tableName + " deleted.")
         else:
             #Alert the user that the database they wanted to delete does not exist
-            print("-- !Failed to delete " + tableName + " because it does not exist.")
+            print("-- !Failed to delete " + "\'" + tableName + "\'" + "- \'because it does not exist.")
     #If not in a database alert user
     else:
         print("-- !Failed to delete " + tableName + " not currently in a database.")
@@ -476,8 +477,9 @@ def opLoop():
 
         #Strips semicolons from command
         userCommand = userCommand.replace(';','')
-
-        if "USE" in userCommand: #Done
+        if "--" in userCommand:
+            print("Pass")
+        elif "USE" in userCommand: #Done
             useDB(userCommand)
         elif 'CREATE DATABASE' in userCommand: #Done
             createDatabase(userCommand)
@@ -503,4 +505,5 @@ def opLoop():
 
 
 
-opLoop()
+if __name__ == '__main__':
+    opLoop()
