@@ -128,3 +128,8 @@ dmypy.json
 # Pyre type checker
 .pyre/
 AS01/TestingScripts/PA1_test.sql
+AS01/db_1.txt
+AS01/db_1.txt
+AS01/db_2.txt
+AS01/PA1_test.sql
+.gitignore
