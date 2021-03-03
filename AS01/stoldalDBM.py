@@ -5,8 +5,7 @@ Discription:
 Implmenting the basic functionallity of SQL
 """
 import os.path
-from os import path
-import shutil
+import sys
 
 
 """
@@ -58,7 +57,7 @@ def useDB(cmd):
 
     else:
         #IF the database does not exist we prompt the user
-        print("-- !Failed to use " + DBName +  " because it does not exist.")
+        print("-- !Failed to use " +  DBName + " because it does not exist.")
 
     #print("useDB" + cmd)
 
@@ -77,6 +76,7 @@ def createDatabase(cmd):
     cmdSplit = cmd.split("CREATE DATABASE ")
 
     DBName = cmdSplit[1]
+    DBName = DBName.strip()
 
     #If the DB already exist tell the user 
     if os.path.isfile(DBName+".txt"):
@@ -239,10 +239,14 @@ def dropDatabase(cmd):
     DBName += ".txt"
 
     #If the DB exist the database will be deleted
+    #print("DATABASE name is: -" + DBName + "-")
     if os.path.isfile(DBName):
 
         #Shutil.rmtree is used so that no error is prompted if the database contains tables(files)
-        os.remove(DBName)
+        try:
+            os.remove(DBName)
+        except:
+            print("***Failed to remove database***")
         print("-- Database " + DBName.split('.')[0] + " deleted.")
         #Check if the current database is the deleted one
         if DBName == currentDB:
@@ -432,7 +436,6 @@ def selectStar(cmd):
                 #Looping through the databaseCopy and copying the variable into a seprate list
                 while databaseCopy[i] != "<<\n":
                     vars.append(databaseCopy[i][1:])
-                 
                     i += 1
                 break
         
@@ -440,7 +443,7 @@ def selectStar(cmd):
         if doesTableExist:
             print("-- ", end="")
             for var in vars:
-                
+                #Formating and printing the list of variables the table has
                 print((var[:-1] + " |"), end =" ")
             
             print()
@@ -468,16 +471,29 @@ def opLoop():
     #It is global because the current dierectory needs to be avaliable to all functions 
     global currentDB
 
+    #Checks to see if more then one argurment is passed in at run time
+    #If the number of arguments is greater then one it is assumed that the file is the test file
+    if len(sys.argv) > 1:
+        sys.stdin = open(sys.argv[1],'r')
+
+    
+
+
+    #print("Number of command line arguments: " + str(len(sys.argv)))
+
     while True:
 
+        
         #Retreaving user input
         #userCommand = input("stoldalDBM-" + currentDB.split('.')[0] +":")
         userCommand = input()
 
         #Strips semicolons from command
         userCommand = userCommand.replace(';','')
-
-        if "USE" in userCommand: #Done
+        if "--" in userCommand:
+            #print("Pass")
+            pass
+        elif "USE" in userCommand: #Done
             useDB(userCommand)
         elif 'CREATE DATABASE' in userCommand: #Done
             createDatabase(userCommand)
