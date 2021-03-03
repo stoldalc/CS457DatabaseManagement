@@ -53,7 +53,7 @@ def useDB(cmd):
     if os.path.isfile(DBName):
         #If the database exist we then change the global scope to be in that directory
         currentDB = DBName
-        print("-- Using Database " + DBName.split('.')[0] + ".")
+        print("-- Using database " + DBName.split('.')[0] + ".")
 
     else:
         #IF the database does not exist we prompt the user
@@ -442,9 +442,17 @@ def selectStar(cmd):
         #If the doesTableExist flag is set print out the vars list
         if doesTableExist:
             print("-- ", end="")
+
+            #Count for formating the output of variables
+            count = 0
+            numVars = len(vars)            
+
             for var in vars:
+                count += 1
                 #Formating and printing the list of variables the table has
-                print((var[:-1] + " |"), end =" ")
+                print((var[:-1]), end ="")
+                if(count != numVars):
+                     print(" |",end=" ")
             
             print()
 
@@ -490,6 +498,9 @@ def opLoop():
 
         #Strips semicolons from command
         userCommand = userCommand.replace(';','')
+
+        #userCommand = userCommand.upper()
+
         if "--" in userCommand:
             #print("Pass")
             pass
