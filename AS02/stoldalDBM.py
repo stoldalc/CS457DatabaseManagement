@@ -1,6 +1,6 @@
 """
 Christian Stoldal
-Assignment 01
+Assignment 02
 Discription:
 Implmenting the basic functionallity of SQL
 """
@@ -10,17 +10,15 @@ import sys
 
 """
 Needed functionallity
--Create a database
--Delete a database
+-insert into a Tabel
+    -Check if in database
+    -Check if Table exist
 
--Create a table within a database
--Delete a table from a database
+- Change * function to just show var values
 
--being within a scope of a database
+-implment where function
 
--altering a table
-
--getting specfic ifnormation from tables
+-implment delete function
 
 """
 
@@ -468,7 +466,8 @@ def selectStar(cmd):
     #print("select star" + cmd)
 
 
-
+def insert(cmd):
+    pass
 
 #opLoop() - Operational Loop that makes up the user interface allowing users to input commands until .exit is called
 def opLoop():
