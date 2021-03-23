@@ -727,71 +727,129 @@ def deleteWhere(cmd):
     deletePosition = []
 
     if deleteOperator == '=':
-        #Start iterating through the databaseCopy
+        #Loop through database looking first for the correct table
         for i in range(len(databaseCopy)):
-            #if the current line is the variable line
-            if deleteVar in databaseCopy[i]:
-                #Incriment I so we arent looking at the var dec
-                i += 1
-                #While not at the end of a table
-                deletePositionCount = 0
-                while databaseCopy[i] != "<<\n":
-                    #Creating a buffer string so the string can be cleaned
-                    buffer = databaseCopy[i].replace('$','')
-                    buffer = buffer.strip()
-                    #If the buffer value(the current line) is equal to the deleteDomain
-                    if buffer == deleteDomain:
-                        #We pop the value from the databaseCopy
-                        itemsDeletedCount += 1 
-                        deletePosition.append(deletePositionCount)
-                        itemsDeletedCount = 0
-                    #In a while loop so we have to iterate manualy
+            #If the current line is the start of the correct table
+                if databaseCopy[i] == (">>" + tableName + "\n"):
+                    #counter for variable position
+                    variablePositionCount = 0
+
+                    #Move forward one postion into the variable defenetions
                     i += 1
-                    deletePositionCount += 1
-                
-                break
-        #deleting the rest of the values in the same row
-        
-        print("Equals operator size: " + str(len(deletePosition)) )
+                    #While not a the end of the database
+                    while databaseCopy[i] != "<<\n":
+                        #Check if the current line is the variable decleration
+                        if deleteVar in databaseCopy[i]:
+                            #Move forward one postion into the variable instances
+                            i += 1
+                            while databaseCopy[i] != "<<\n":
+                                
+                                buffer = cleanString(databaseCopy[i])
+                                #print("parsing buffer: " + str(buffer))
+                                
+                                """
+                                The if statment below is what needs to be changed to adjust the operator
+                                """
+
+                                #in this case we are checking to see if our domain value 
+                                # is equal to the buffer value
+                                if buffer == deleteDomain:
+                                    #if the delete condition is true at that position to the 
+                                    # delete postion array
+                                    deletePosition.append(variablePositionCount)
+                                    #reset the postion count to 0
+                                    variablePositionCount = 0
+
+                                variablePositionCount += 1
+                                i += 1
+                        i += 1
+                        if i > len(databaseCopy)-1:
+                            break
+
+        #print("The number of variables found for deletion is: " + str(deletePosition))
+        #print("At position(s): ",end="")
+        # for val in deletePosition:
+        #     print(str(val) + "",end='')
+        # print()
+
+        #Deleting the specfied row
+
+        #Repeat below process for each 
         for j in range(len(deletePosition)):
-            i = 0
-            while databaseCopy[i] != "<<\n":
-                #If we are at the devleration of a variable
-                #print("Parsing line: " + str(databaseCopy[i]))
-                if databaseCopy[i][0] == '*':
-                    #print("*****Deleting val: " + databaseCopy[deletePosition[j] + i + 1] + " at i: " + str(deletePosition + i + 1))
-                    databaseCopy.pop(deletePosition[j] + i + 1)
-                i += 1
-                print("-----i: " + str(i) )
-                print("Current line is: " + str(databaseCopy[i]))
-    elif deleteOperator == '>':
-        for i in range(len(databaseCopy)):
-            #if the current line is the variable line
-            if deleteVar in databaseCopy[i]:
-                #print("inside if")
-                i += 1
-                deletePositionCount = 0
-                while databaseCopy[i] != "<<\n":
-                    buffer = databaseCopy[i].replace('$','')
-                    if float(buffer) > float(deleteDomain):
-                        itemsDeletedCount += 1
+            #Start by looking for the correcttable
+            for i in range(len(databaseCopy)):
+                #If the current line is the start of the correct table
+                    if databaseCopy[i] == (">>" + tableName + "\n"):
+                        while databaseCopy[i] != "<<"+"\n":
+                            if databaseCopy[i][0] == "*":
+                                #print("Deleting line: " + databaseCopy[i+deletePosition[j]+1])
+                                #print("position: " + str(i+deletePosition[j]+1))
+                                databaseCopy.pop(i+deletePosition[j]+1)
+                                #deletePosition = adjustArray(deletePosition)
+                            i += 1
                         break
+            deletePosition = adjustArray(deletePosition)
+
+
+    elif deleteOperator == '>':
+        #Loop through database looking first for the correct table
+        for i in range(len(databaseCopy)):
+            #If the current line is the start of the correct table
+                if databaseCopy[i] == (">>" + tableName + "\n"):
+                    #print("In if")
+                    #counter for variable position
+                    variablePositionCount = 0
+
+                    #Move forward one postion into the variable defenetions
                     i += 1
-                    deletePositionCount += 1
-                deletePosition.append(deletePositionCount)
-                break
- 
-        #deleting the rest of the values in the same row
-        i = 0
+                    #While not a the end of the database
+                    while databaseCopy[i] != "<<\n":
+                        #Check if the current line is the variable decleration
+                        if deleteVar in databaseCopy[i]:
+                            #Move forward one postion into the variable instances
+                            i += 1
+                            while databaseCopy[i] != "<<\n":
+                                
+                                buffer = cleanString(databaseCopy[i])
+                                #print("parsing buffer: " + str(buffer))
+                                
+                                #in this case we are checking to see if our domain value 
+                                # is greater then the buffer value
+                                if float(buffer) > float(deleteDomain):
+                                    deletePosition.append(variablePositionCount)
+                                    variablePositionCount = 0
+
+                                variablePositionCount += 1
+                                i += 1
+                        i += 1
+                        if i > len(databaseCopy)-1:
+                            break
+
+        # print("The number of variables found for deletion is: " + str(deletePosition))
+        # print("At position(s): ",end="")
+        # for val in deletePosition:
+        #     print(str(val) + "",end='')
+        # print()
+
+        #Deleting the specfied row
+
+        #Repeat below process for each 
         for j in range(len(deletePosition)):
-            while databaseCopy[i] != "<<\n":
-                #If we are at the devleration of a variable
-                #print("Parsing line here: " + str(databaseCopy[i]))
-                #print("Comparing: " + databaseCopy[i] + " with " + ("*" + deleteVar + "\n"))
-                if databaseCopy[i][0] == '*':
-                    #print("*****Deleting val: " + databaseCopy[deletePosition[j] + i + 1] + " at i: " + str(deletePosition + i + 1))
-                    databaseCopy.pop(deletePosition[j] + i + 1)
-                i += 1
+            #Start by looking for the correcttable
+            for i in range(len(databaseCopy)):
+                #If the current line is the start of the correct table
+                    if databaseCopy[i] == (">>" + tableName + "\n"):
+                        while databaseCopy[i] != "<<"+"\n":
+                            if databaseCopy[i][0] == "*":
+                                #print("Deleting line: " + databaseCopy[i+deletePosition[j]+1])
+                                #print("position: " + str(i+deletePosition[j]+1))
+                                databaseCopy.pop(i+deletePosition[j]+1)
+                                #deletePosition = adjustArray(deletePosition)
+                            i += 1
+                        break
+            deletePosition = adjustArray(deletePosition)
+
+
     elif deleteOperator == '<':
         for i in range(len(databaseCopy)):
             if databaseCopy[i] == ('*' + deleteVar + '\n'):
@@ -800,7 +858,7 @@ def deleteWhere(cmd):
                     #print("Buffer is: " + str(buffer))
                     #print("Delete domain is: " + str(deleteDomain))
                     if float(buffer) < float(deleteDomain):
-                        print("*****Deleting val: " + databaseCopy[i])
+                        #print("*****Deleting val: " + databaseCopy[i])
                         databaseCopy.pop(i)
                         itemsDeletedCount += 1
                     i += 1
@@ -857,6 +915,11 @@ def cleanString(s):
     s = s.replace('$','')
     
     return s
+
+def adjustArray(ar):
+    for i in range(len(ar)):
+        ar[i] = ar[i]-1
+    return ar
 
 
 
