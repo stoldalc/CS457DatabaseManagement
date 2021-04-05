@@ -1,26 +1,25 @@
 """
 Christian Stoldal
-Assignment 01
+Assignment 02
 Discription:
-Implmenting the basic functionallity of SQL
+Implmenting the functions insert delete modift and query on the basic table
 """
 import os.path
 import sys
 
 
 """
-Needed functionallity
-Insert Function
--"insert into Product valyes(1, 'Gizmo', 19.99);
-    -Check if in a database
-        -Check if "Product" table exist
+Encoding Table
 
-
-
-Alter select * functionality to show variables instead of schema
-
-Where 
-
+Symbol  |    Meaning
+----------------------
+  >>    | Start of a table
+----------------------
+   *    | Variable definition
+----------------------
+   $    | Variable instance
+----------------------
+  <<    | End of a table
 """
 
 currentDB = ""
@@ -52,13 +51,12 @@ def useDB(cmd):
     if os.path.isfile(DBName):
         #If the database exist we then change the global scope to be in that directory
         currentDB = DBName
-        print("-- Using Database " + DBName.split('.')[0] + ".")
+        print("-- Using database " + DBName.split('.')[0] + ".")
 
     else:
         #IF the database does not exist we prompt the user
         print("-- !Failed to use " +  DBName + " because it does not exist.")
 
-    #print("useDB" + cmd)
 
 
 
@@ -85,8 +83,6 @@ def createDatabase(cmd):
         open(DBName + ".txt", "x")
         print("-- Database " + DBName + " created.")
 
-
-    #print("createDatabase" + cmd)
 
 
 
@@ -146,6 +142,12 @@ def createTable(cmd):
 
     tableName = cmdSplit[1].split('(')[0]
     tableName = tableName.strip()
+    if tableName[0].islower():
+        tableName = tableName[0].upper() + tableName[1:]
+
+    if tableName[0].islower():
+        tableName[0] = tableName[0].upper()
+    
 
     #spliting out the vars
     variableAssignments = cmdSplit[1].split(tableName)[1]
@@ -214,9 +216,6 @@ def createTable(cmd):
         print("-- !Failed to create table " + tableName + " not currently in a database.")
 
 
-
-    #print("create table" + cmd)
-
 #This function delets a database and all tables within
 def dropDatabase(cmd):
 
@@ -267,6 +266,9 @@ def dropTable(cmd):
     cmdSplit = cmd.split("DROP TABLE ")
 
     tableName = cmdSplit[1]
+    if tableName[0].islower():
+        tableName = tableName[0].upper() + tableName[1:]
+    
 
     #Check to see if the user is in a database
     if currentDB != "":
@@ -335,6 +337,9 @@ def alterTable(cmd):
 
 
     tableName = cmdSplit.split(" ADD ")[0]
+    if tableName[0].islower():
+            tableName = tableName[0].upper() + tableName[1:]
+
     var = cmdSplit.split(" ADD ")[1]
     
     if currentDB != "":
@@ -400,9 +405,15 @@ def selectStar(cmd):
     global currentDB
 
     #Seperating the command from the intended database    
-    cmdSplit = cmd.split("SELECT * FROM ")
+    if cmd.split(' ')[0].isupper():
+        cmdSplit = cmd.split("SELECT * FROM ")
+    else:
+        cmdSplit = cmd.split("select * from ")
+
 
     tableName = cmdSplit[1]
+    if tableName[0].islower():
+        tableName = tableName[0].upper() + tableName[1:]
 
     #List of variables
     vars = []
@@ -481,6 +492,8 @@ def selectStar(cmd):
 
     #print("select star" + cmd)
 
+
+#This function takes in a string consisting with values table and new variable instances
 def insertInto(cmd):
 
 
@@ -501,15 +514,13 @@ def insertInto(cmd):
     #Getting the instances of the diffrent variables to be inserted
     newVars = userCommand.split('values')[1]
 
+    #Cleaning the new vars 
     newVars = newVars[1:-1]
     newVars = newVars.replace(' ','')
     newVars = newVars.replace('\t','')
     newVars = newVars.replace('\'','')
     newVars = newVars.replace('\n','')
     newVars = newVars.split(',')
-
-    
-    #print("The variables: " + str(newVars) + " is being added to table: " + str(insertTable))
 
     #The case that the user is not within a database 
     if not inDataBase():
@@ -532,39 +543,42 @@ def insertInto(cmd):
     fp.close
 
     #DEBUGGING
-    #print("DataBaseCopy: " + str(databaseCopy))
 
+    k = 0
 
-    for i in range(len(databaseCopy)):
-        #Checking to see if the current line is the start of the correct database
-        if databaseCopy[i] == (">>" + insertTable + '\n'):
-            #If it is start a loop to continue through the database copy
-            for j in range(i,len(databaseCopy)+len(newVars)):
-                #If the current lines first char is a '*' it is the decleration of a variable
-                if (databaseCopy[j][0] == '*') and (len(newVars) != 0):
-                    j += 1
-                    varString = str("$" + newVars.pop(0) + '\n')
-                    databaseCopy.insert(j,varString)
-                elif databaseCopy[j] == "<<":
-
-                    break
-
-                
-
-            break
-
-
+    #parse through database adding the amount of new variables to the total length of the database
+    for i in range(len(databaseCopy)+len(newVars)):
+        #If the current line is the start of the correct table
+        if databaseCopy[i] == (">>" + insertTable + "\n"):
+            j = i
+            #parse theought the variable instances
+            for j in range(len(databaseCopy)+len(newVars)):
+                #if the current line is a variable
+                if databaseCopy[j][0] == "*":
+                    k = j + 1 
+                    #Parse until we reach a diffrent bariable
+                    while databaseCopy[k][0] != "*":
+                        #make sure we are not at the end of the database
+                        if databaseCopy[k] == "<<\n":
+                            break
+                        k += 1
+                    #Add encoding to the new variable
+                    buffer = "$" +  newVars.pop(0) + '\n'
+                    #append the new variable
+                    databaseCopy.insert(k,buffer)
+        i = k
+    #Write the database copy to file
     fp = open(currentDB,'w')
-    #print("DataBaseCopy: " + str(databaseCopy))
 
     for line in databaseCopy:
         fp.write(line)
 
     fp.close()
-
+    #alert the user of the update
     print("-- 1 new record inserted.")
 
-
+#updateWhere takes in a user command and updates the table based on the 
+# condition within the user command
 def updateWhere(cmd):
 
     #For debuging
@@ -574,9 +588,12 @@ def updateWhere(cmd):
 
     global currentDB
 
+    #Parsing the users command
     cmdList = cmd.split()
 
     tableName = cmdList[1].strip()
+    if tableName[0].islower():
+        tableName = tableName[0].upper() + tableName[1:]
 
     newValueVar = cmdList[3].strip()
     newValueVar = newValueVar.replace('\'','')
@@ -588,15 +605,6 @@ def updateWhere(cmd):
 
     whereVarValue = cmdList[9].strip()
     whereVarValue = whereVarValue.replace('\'','')
-
-    """
-    update TABLE
-    set VAR with VALUE
-    where VAR = VALUE
-
-    """
-
-
 
     """
     Find postion of where value
@@ -619,7 +627,6 @@ def updateWhere(cmd):
         print("-- !Failed to update table " + tableName + " because it does not exist.")
         return
 
-
     #Opening the database 
     fp = open(currentDB,'r')
 
@@ -632,52 +639,44 @@ def updateWhere(cmd):
     whereValuePositions = []
     currentCount = 0
 
+    #parse through the database
     for i in range(len(databaseCopy)):
-        #print("Parsing line: " + databaseCopy[i])
+        #If the current line in the database contains the variable defined in where
         if whereVar in databaseCopy[i]:
             i += 1
+            #look at the lines until we reach a variable definition
             while databaseCopy[i][0] != "*":
-                #print("In while")
-                #print("Parsing line: " + databaseCopy[i])
-                #print("Comparing to: " + ("$" + whereVarValue + '\n'))
+                #If the current line satisfys the where condition
                 if databaseCopy[i] == ("$" + whereVarValue + '\n'):
-                    #print('Breaking on line: ' + databaseCopy[i])
+                    #Add its position to the list of positions
                     whereValuePositions.append(currentCount)
                 currentCount += 1
                 i += 1
-        
-    #print("Value postion in " + whereVar + " is " + str(list(whereValuePositions)))
 
+    #Parse through the positions to be updated
     for i in range(len(whereValuePositions)):
+        #Parse through the database for each position to be corrected
         for j in range(len(databaseCopy)):
-        #print("Parsing line: " + databaseCopy[i])
-            
-            #print("j is: " + str(j))
             if newValueVar in databaseCopy[j]:
                 j += 1
-                #print("Current Line is: " + databaseCopy[j])
-                #print("Var position: " + str(j+whereValuePositions[i]))
+                #Adjust the needed variable
                 databaseCopy[j+whereValuePositions[i]] = ("$" + newValue + '\n')
-                #if databaseCopy[j] 
 
-
-
-
-
+    #Write databaseCopy to file
     fp = open(currentDB,'w')
-    #print("DataBaseCopy: " + str(databaseCopy))
 
     for line in databaseCopy:
         fp.write(line)
 
     fp.close()
 
+    #Update user
     if len(whereValuePositions) <= 1:
         print("-- " + str(len(whereValuePositions)) + " record modified.")
     else:
         print("-- " + str(len(whereValuePositions)) + " records modified.")
 
-
+#deleteWhere takes in a command from a user and deletes the tuple based on a conditon form the user
 def deleteWhere(cmd):
 
     #For debuging
@@ -687,22 +686,21 @@ def deleteWhere(cmd):
 
     global currentDB
 
+    #Parsing the user command for needed data
     cmdList = cmd.split('delete from')[1]
     cmdList = cmdList.split(' ')
 
     tableName = cmdList[1]
+    if tableName[0].islower():
+        tableName = tableName[0].upper() + tableName[1:]
 
+    
     deleteVar = cmdList[3]
 
     deleteOperator = cmdList[4]
 
-
     deleteDomain = cmdList[5]
     deleteDomain = deleteDomain.replace('\'','')
- #print("Table name: " + tableName)
-
-    #print("cmdList size: " + str(cmdList))
-
 
     #Opening the database 
     fp = open(currentDB,'r')
@@ -766,14 +764,6 @@ def deleteWhere(cmd):
                         if i > len(databaseCopy)-1:
                             break
 
-        #print("The number of variables found for deletion is: " + str(deletePosition))
-        #print("At position(s): ",end="")
-        # for val in deletePosition:
-        #     print(str(val) + "",end='')
-        # print()
-
-        #Deleting the specfied row
-
         #Repeat below process for each 
         for j in range(len(deletePosition)):
             #Start by looking for the correcttable
@@ -782,10 +772,8 @@ def deleteWhere(cmd):
                     if databaseCopy[i] == (">>" + tableName + "\n"):
                         while databaseCopy[i] != "<<"+"\n":
                             if databaseCopy[i][0] == "*":
-                                #print("Deleting line: " + databaseCopy[i+deletePosition[j]+1])
-                                #print("position: " + str(i+deletePosition[j]+1))
                                 databaseCopy.pop(i+deletePosition[j]+1)
-                                #deletePosition = adjustArray(deletePosition)
+                                
                             i += 1
                         break
             deletePosition = adjustArray(deletePosition)
@@ -796,7 +784,6 @@ def deleteWhere(cmd):
         for i in range(len(databaseCopy)):
             #If the current line is the start of the correct table
                 if databaseCopy[i] == (">>" + tableName + "\n"):
-                    #print("In if")
                     #counter for variable position
                     variablePositionCount = 0
 
@@ -824,13 +811,6 @@ def deleteWhere(cmd):
                         i += 1
                         if i > len(databaseCopy)-1:
                             break
-
-        # print("The number of variables found for deletion is: " + str(deletePosition))
-        # print("At position(s): ",end="")
-        # for val in deletePosition:
-        #     print(str(val) + "",end='')
-        # print()
-
         #Deleting the specfied row
 
         #Repeat below process for each 
@@ -840,11 +820,9 @@ def deleteWhere(cmd):
                 #If the current line is the start of the correct table
                     if databaseCopy[i] == (">>" + tableName + "\n"):
                         while databaseCopy[i] != "<<"+"\n":
-                            if databaseCopy[i][0] == "*":
-                                #print("Deleting line: " + databaseCopy[i+deletePosition[j]+1])
-                                #print("position: " + str(i+deletePosition[j]+1))
+                            if databaseCopy[i][0] == "*":  
                                 databaseCopy.pop(i+deletePosition[j]+1)
-                                #deletePosition = adjustArray(deletePosition)
+
                             i += 1
                         break
             deletePosition = adjustArray(deletePosition)
@@ -855,36 +833,166 @@ def deleteWhere(cmd):
             if databaseCopy[i] == ('*' + deleteVar + '\n'):
                 while databaseCopy[i] != "<<\n":
                     buffer = databaseCopy.replace('$','')
-                    #print("Buffer is: " + str(buffer))
-                    #print("Delete domain is: " + str(deleteDomain))
                     if float(buffer) < float(deleteDomain):
-                        #print("*****Deleting val: " + databaseCopy[i])
                         databaseCopy.pop(i)
                         itemsDeletedCount += 1
                     i += 1
-    elif deleteOperator == '!=':
-        pass
     else:
         print("-- Could not delete uknown operator: " + str(deleteOperator))
 
+
+    #Write to file
     fp = open(currentDB,'w')
-    #print("DataBaseCopy: " + str(databaseCopy))
 
     for line in databaseCopy:
         fp.write(line)
 
     fp.close()
 
-    if itemsDeletedCount <= 1:
+    #Update user
+    if len(deletePosition) <= 1:
         print("-- " + str(len(deletePosition)) + " record deleted.")
     else:
         print("-- " + str(len(deletePosition)) + " records deleted.")
 
+#selectWhere takes in a user command of variable the user wants to see and 
+#the condition under they will be seen
+def selectWhere(cmd):
+    
+    #For debuging
+    global printCommands
+    if printCommands:
+        print(cmd)
+
+    global currentDB
+
+
+    #Seperating the command from the intended database    
+    if cmd.split(' ')[0].isupper():
+        cmdSplit = cmd.split("SELECT")[1]
+    else:
+        cmdSplit = cmd.split("select")[1]
+
+        cmdSplit = cmdSplit.split("where")
+
+        condition = cmdSplit[1]
+        condition = condition.split(' ')
+        condition.pop(0)
+
+        cmdSplit = cmdSplit[0]
+
+        cmdSplit = cmdSplit.split("from")
+
+        tableName = cmdSplit[1]
+        tableName = tableName.strip()
+        if tableName[0].islower():
+            tableName = tableName[0].upper() + tableName[1:]
+
+        cmdSplit = cmdSplit[0]
+
+        printArguments = cmdSplit.split(',')
+        for i in range(len(printArguments)):
+            printArguments[i] = cleanString(printArguments[i])
+        #printArguments = printArguments.strip()
+
+    #Opening the database 
+    fp = open(currentDB,'r')
+
+    #and copying the database to a string arr
+    databaseCopy = fp.readlines()
+
+    #close fp 
+    fp.close
+
+    #The case that the user is not within a database 
+    if not inDataBase():
+        print("-- !Failed to search table " + tableName + " not currently in a database.")
+        return
+
+    #The vase that the user wants to insert into a table that does not exist
+    if not doesTableExist(tableName):
+        print("-- !Failed to search table " + tableName + " because it does not exist.")
+        return
+
+
+    vars = []
+    #Loading the variables into seperate arrays
+    for i in range(len(databaseCopy)):
+        #If the current line is equal to the user selected database
+        if databaseCopy[i] == ">>" + tableName + "\n":
+            j = i
+            for j in range(len(databaseCopy)):
+                buffer = []
+                #if we are looking at a new variable
+                if databaseCopy[j][0] == "*":
+                    #Append the variable defenetion to the first position of the list
+                    buffer.append(databaseCopy[j])
+                    k = j + 1
+                    #Keep steping through until we are looking at a new variable
+                    while databaseCopy[k][0] != "*":
+                        #Append each instace of it to a list
+                        buffer.append(cleanString(databaseCopy[k]))
+                        #Make sure we are not at the end of the database
+                        if databaseCopy[k] =="<<\n":
+                            break
+                        k += 1
+                    vars.append(buffer)
+                    if databaseCopy[j] == "<<\n":
+                        break
+    #Clean the vars of extra charachters
+    for i in range(len(vars)):
+        vars[i][0] = vars[i][0].replace('\n','')
+        vars[i][0] = vars[i][0].strip()
+        vars[i][0] = vars[i][0].replace('*','')
+
+
+    printPosition = 0
+    printPositionList = []
+
+    #Get the positions of all of the values that meet thr condition
+    for i in range(len(vars)):
+        if condition[0] in vars[i][0]:
+            #print("in here")
+            if condition[1] == '!=':
+                for j in range(1,len(vars[i])):
+                    if vars[i][j] != condition[2]:
+                        printPositionList.append(printPosition)
+                    printPosition += 1
+    
+
+            
+
+    masterPrintArguments = []
+
+    for i in range(len(printArguments)):
+        for j in range(len(vars)):
+            if printArguments[i] in vars[j][0]:
+                masterPrintArguments.append(vars[j])
+    
+    
+    #Formated printing
+    #First printing the variable defenetions
+    print("-- ",end="")
+    for i in range(len(masterPrintArguments)):
+        print(masterPrintArguments[i][0],end="")
+        if i != len(masterPrintArguments)-1:
+                print("|",end="")
+    print()
+
+    #Second printing the variable instances
+    for i in range(len(printPositionList)):
+        print("-- ",end="")
+        for j in range(len(masterPrintArguments)):
+            print(masterPrintArguments[j][printPositionList[i]+1],end="")
+            if j != len(masterPrintArguments)-1:
+                print("|",end="")
+        print()
+        
 
 """
 ************** Tool Functions **************
 """
-
+#Function to check if the user is within a database
 def inDataBase():
     global currentDB
 
@@ -893,6 +1001,7 @@ def inDataBase():
     else:
         return True
 
+#Function to check if the requested table exist
 def doesTableExist(tName):
     fp = open(currentDB,'r')
 
@@ -921,16 +1030,6 @@ def adjustArray(ar):
         ar[i] = ar[i]-1
     return ar
 
-
-
-
-
-
-
-
-
-
-
 #opLoop() - Operational Loop that makes up the user interface allowing users to input commands until .exit is called
 def opLoop():
 
@@ -958,18 +1057,20 @@ def opLoop():
 
         #userCommand = userCommand.split()
 
+        if ".EXIT" in userCommand or ".exit" in userCommand:
+            print("-- All done.")
+            break
+
 
         #In the case on the first enter from the user the command does not end
         # with a ';' keep looping until a command ends in ';'
-        if userCommand != '':
-            if (userCommand[len(userCommand)-1] != ';') and userCommand != ".EXIT" :
-                #print("current line: " + userCommand)
+        if userCommand != '' and "--" not in userCommand:
+            if (userCommand[len(userCommand)-1] != ';') and userCommand != (".EXIT" or ".exit") :
                 while True:
                     userCommand += input()
                     if userCommand[len(userCommand)-1] == ';':
                         break
         if userCommand == '':
-            #print("NEW LINE")
             pass
         #Strips semicolons from command
         userCommand = userCommand.replace(';','')
@@ -997,7 +1098,9 @@ def opLoop():
             dropTable(userCommand)
         elif "ALTER TABLE"in userCommand:
             alterTable(userCommand)
-        elif "SELECT *" in userCommand: #Done
+        elif ("SELECT" in userCommand or "select " in userCommand) and "*" not in userCommand:
+            selectWhere(userCommand)
+        elif "SELECT *" in userCommand or "select *" in userCommand: #Done
             selectStar(userCommand)
         elif "insert into" in userCommand:
             insertInto(userCommand)
@@ -1005,17 +1108,9 @@ def opLoop():
             updateWhere(userCommand)
         elif "delete from" in userCommand:
             deleteWhere(userCommand)
-        elif ".EXIT" in userCommand:
+        elif ".EXIT" in userCommand or ".exit" in userCommand:
             print("-- All done.")
             break
-
-    
-
-
-
-
-
-
 
 
 
