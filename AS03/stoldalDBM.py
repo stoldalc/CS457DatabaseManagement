@@ -25,7 +25,7 @@ Symbol  |    Meaning
 currentDB = ""
 
 #For debuging
-printCommands = False
+printCommands = True
 
 
 
@@ -137,8 +137,15 @@ def createTable(cmd):
 
     global currentDB
 
-    #Seperating the command from the intended database    
-    cmdSplit = cmd.split("CREATE TABLE ")
+    #Seperating the command from the intended database  
+
+    if cmd.split(' ')[0].isupper():  
+        print("splitting on upper")
+        print("cmd.split[0]: " + str(cmd.split((' ')[0])) )
+        cmdSplit = cmd.split("CREATE TABLE ")
+    else:
+        print("splitting on upper")
+        cmdSplit = cmd.split("create table ")
 
     tableName = cmdSplit[1].split('(')[0]
     tableName = tableName.strip()
@@ -549,11 +556,15 @@ def insertInto(cmd):
     #parse through database adding the amount of new variables to the total length of the database
     for i in range(len(databaseCopy)+len(newVars)):
         #If the current line is the start of the correct table
+        #print("Checking line: " + str(databaseCopy[i]))
+        #print("Against: " + (">>" + insertTable + "\n"))
         if databaseCopy[i] == (">>" + insertTable + "\n"):
-            j = i
+            #j = i
+            #print("\tPASSED J: " + str(j) + " I: " + str(i))
             #parse theought the variable instances
-            for j in range(len(databaseCopy)+len(newVars)):
+            for j in range(i,len(databaseCopy)+len(newVars)):
                 #if the current line is a variable
+                print("J:" + str(j))
                 if databaseCopy[j][0] == "*":
                     k = j + 1 
                     #Parse until we reach a diffrent bariable
@@ -563,9 +574,11 @@ def insertInto(cmd):
                             break
                         k += 1
                     #Add encoding to the new variable
-                    buffer = "$" +  newVars.pop(0) + '\n'
-                    #append the new variable
-                    databaseCopy.insert(k,buffer)
+                    if len(newVars) > 0:
+                        print("K is: " +  str(k))
+                        buffer = "$" +  newVars.pop(0) + '\n'
+                        #append the new variable
+                        databaseCopy.insert(k,buffer)
         i = k
     #Write the database copy to file
     fp = open(currentDB,'w')
@@ -1088,9 +1101,9 @@ def opLoop():
             pass
         elif "USE" in userCommand: #Done
             useDB(userCommand)
-        elif 'CREATE DATABASE' in userCommand: #Done
+        elif 'CREATE DATABASE' in userCommand or "create database " in userCommand: #Done
             createDatabase(userCommand)
-        elif "CREATE TABLE"  in userCommand: #Done
+        elif "CREATE TABLE"  in userCommand or "create table" in userCommand: #Done
             createTable(userCommand)
         elif "DROP DATABASE" in userCommand: #Done
             dropDatabase(userCommand)
