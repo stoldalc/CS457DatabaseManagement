@@ -1339,7 +1339,237 @@ def selectStarVar(cmd):
 
         
         
+def selectWhereJoin(cmd):
 
+    #For debuging
+    global printCommands
+    if printCommands:
+        print(cmd)
+
+    global currentDB
+
+    Tables = []
+
+    if cmd.split(' ')[0].isupper():
+
+        cmdSplit = cmd.split("SELECT * FROM ")
+
+        if "INNER JOIN" in cmd:
+            buffer = cmdSplit[1].split("INNER JOIN")[0]
+            buffer = buffer.strip()
+            Tables.append(buffer)
+            secondTable = cmdSplit[1].split("INNER JOIN")[1]
+            buffer = secondTable.split("ON")[0]
+            buffer = buffer.strip()
+            Tables.append(buffer)
+
+    else:
+        cmdSplit = cmd.split("select * from ")
+
+        if "inner join" in cmd:
+            buffer = cmdSplit[1].split("inner join")[0]
+            buffer = buffer.strip()
+            Tables.append(buffer)
+            secondTable = cmdSplit[1].split("inner join")[1]
+            buffer = secondTable.split("on")[0]
+            buffer = buffer.strip()
+            Tables.append(buffer)
+
+            condition = cmd.split("on")[1]
+            condition = condition.split(" ")
+
+            conditionL = condition[0]
+            conditionEvaluator = condition[1]
+            conditionR = condition[2]
+
+    print("Condition L: " + conditionL)
+    print("Condition R: " + conditionR)
+
+    #Getting the Table that we are trying to search an item for the LHS
+    leftTableVar = conditionL.split(".")[0]
+    leftTableItem = conditionL.split(".")[1]
+    
+    #Getting the Table that we are trying to search an item for the RHS
+    rightTableVar = conditionR.split(".")[0]
+    rightTableItem = conditionR.split(".")[1]
+
+    print("LHS TableVar: " + leftTableVar + " TableItem: " + leftTableItem)
+    print("RHS TableVar: " + rightTableVar + " TableItem: " + rightTableItem)
+
+    
+
+    TablesList = []
+
+    for i in range(len(Tables)):
+            Tables[i] = Tables[i].strip()
+            #print("Reading line: " + Tables[i])
+            tableName = Tables[i].split(" ")[0]
+            tableVar = Tables[i].split(" ")[1]
+            bufferTableVar = tableVarRep(tableName,tableVar)
+            TablesList.append(bufferTableVar)
+    
+    for i in range(len(TablesList)):
+        print("Table name: " + TablesList[i].TableName + " Table name var: " + TablesList[i].TableNameVar)
+
+
+
+        
+
+    
+
+    #Opening the database 
+    fp = open(currentDB,'r')
+
+    #and copying the database to a string arr
+    databaseCopy = fp.readlines()
+
+    #close fp 
+    fp.close
+
+    #The case that the user is not within a database 
+    if not inDataBase():
+        print("-- !Failed to search table " + tableName + " not currently in a database.")
+        return
+
+    #The vase that the user wants to insert into a table that does not exist
+
+    LHSVarsInstances = []
+    RHSVarsInstances = []
+
+    currentSide = "L"
+
+    for i in range(len(TablesList)):
+        
+        #Search for the current TabesList[i].TableName
+        for j in range(len(databaseCopy)):
+
+            #Check if the current line is the start of the table
+            if databaseCopy[j] == (">>" + TablesList[i].TableName + "\n"):
+                
+                #If the line has been found we now start searching for the correct table item
+                for k in range(j,len(databaseCopy)):
+                    
+                    #Check if the current line is equal to the table item
+                    if TablesList[i].TableItem in databaseCopy[k]:
+                        
+                        #Start a loop at one position past where we found the variable def
+                        l = k+1
+                        #While we are not at a new variable append the items to the LHSVarsInstances List
+                        while databaseCopy[l][0] != "*":
+                            if currentSide == "L":
+                                buffer = databaseCopy[l].replace('$','')
+                                buffer = buffer.replace('\n','')
+                                LHSVarsInstances.append(buffer)
+                            elif currentSide == "R":
+                                buffer = databaseCopy[l].replace('$','')
+                                buffer = buffer.replace('\n','')
+                                RHSVarsInstances.append(buffer)
+                            l += 1
+                        if currentSide == "L":
+                            currentSide = "R"
+    #print("LHS Var instances: " + str(LHSVarsInstances))
+    #print("RHS Var instances: " + str(RHSVarsInstances))
+
+    #Find the matches
+    matchPositions = []
+    #Loop through the right hand side
+    for i in range(len(LHSVarsInstances)):
+        #For each right hand side
+        for j in range(len(RHSVarsInstances)):
+            if LHSVarsInstances[i] == RHSVarsInstances[j]:
+                buffer = []
+                buffer.append(i)
+                buffer.append(j)
+                matchPositions.append(buffer)
+    
+    #print("Match Positions")
+    #print(matchPositions)
+
+
+    #Get the list of vars
+    varDefs = "-- "
+    for i in range(len(TablesList)):
+        #Loop through the databasecopy
+        for j in range(len(databaseCopy)):
+            #Check if the current line is equal to the table
+            if databaseCopy[j] == (">>" + TablesList[i].TableName + "\n"):
+                #Loop through the table
+                #starting at one postion pas the start of the table
+                k = j+1
+                while databaseCopy[k] != "<<\n":
+                    #If the current line is a variable defenetion
+                    if databaseCopy[k][0] == "*":
+                        #print("Found line: " + databaseCopy[k])
+                        buffer = databaseCopy[k]
+                        buffer = buffer.replace("*",'')
+                        buffer = buffer.replace("\n",'')
+                        buffer += "|"
+                        varDefs += buffer
+                    k += 1
+    varDefs = varDefs[:-1]
+    print(varDefs)
+
+    #Get a string for each matched position
+    varInstancePrint = "-- "
+    LHSPrint = ""
+    RHSPrint = ""
+    varPosition = 0
+    for i in range(len(matchPositions)):
+        #Find the start of the first table
+        for j in range(len(databaseCopy)):
+            #Check if the current line is equal to the LHS table
+            if databaseCopy[j] == (">>" + TablesList[0].TableName + "\n"):
+                #Loop through the table
+                k = j+1
+                while databaseCopy[k] != "<<\n":
+                    #Check if we are at a variable defnetion
+                    if databaseCopy[k][0] == "*":
+                        #print("Found line: " + databaseCopy)
+                        #Loop through the variable defenetions
+                        l = k +1
+                        varPosition = l + matchPositions[i][0]
+                        while databaseCopy[l][0] != "*":
+                            if l == varPosition:
+                                buffer = databaseCopy[l]
+                                buffer = buffer.replace("$","")
+                                buffer = buffer.replace("\n","")
+                                buffer += "|"
+                                LHSPrint += buffer
+                            l += 1
+                    k += 1
+                k = 0
+                l = 0
+            #Check if the current line is equal to the RHS table
+            elif databaseCopy[j] == (">>" + TablesList[1].TableName + "\n"):
+                #Loop through the table
+                k = j+1
+                while databaseCopy[k] != "<<\n":
+                    #Check if we are at a variable defnetion
+                    if databaseCopy[k][0] == "*":
+                        #print("Found line: " + databaseCopy)
+                        #Loop through the variable defenetions
+                        l = k +1
+                        varPosition = l + matchPositions[i][1]
+                        while databaseCopy[l][0] != "*" and databaseCopy[l] != "<<\n":
+                            #print("DatabaseCopy at " + str(l) + ": " + databaseCopy[l])
+                            if l == varPosition:
+                                buffer = databaseCopy[l]
+                                buffer = buffer.replace("$","")
+                                buffer = buffer.replace("\n","")
+                                buffer += "|"
+                                LHSPrint += buffer
+                            l += 1
+                        #print("Broke at end of variable")
+                    k += 1
+                k = 0
+                l = 0
+        varInstancePrint += LHSPrint
+        varInstancePrint += RHSPrint  
+        varInstancePrint = varInstancePrint[:-1]    
+        print(varInstancePrint)
+        varInstancePrint = "-- "
+        LHSPrint = ""
+        RHSPrint = ""
 
 
 
@@ -1416,6 +1646,9 @@ def opLoop():
             dropTable(userCommand)
         elif "ALTER TABLE"in userCommand:
             alterTable(userCommand)
+        elif "on" in userCommand or "ON" in userCommand:
+            print("CALLING: selectWhereJoin" )
+            selectWhereJoin(userCommand)
         elif ("SELECT" in userCommand or "select " in userCommand) and "*" not in userCommand:
             selectWhere(userCommand)
         elif "SELECT *" in userCommand or "select *" in userCommand: #Done
