@@ -1363,6 +1363,16 @@ def selectWhereJoin(cmd):
             buffer = buffer.strip()
             Tables.append(buffer)
 
+            condition = cmd.split("ON")[1]
+            condition = condition.strip()
+            condition = condition.split(" ")
+
+            #print("Condition statment: " + str(condition))
+
+            conditionL = condition[0]
+            conditionEvaluator = condition[1]
+            conditionR = condition[2]
+
     else:
         cmdSplit = cmd.split("select * from ")
 
@@ -1376,14 +1386,17 @@ def selectWhereJoin(cmd):
             Tables.append(buffer)
 
             condition = cmd.split("on")[1]
+            condition = condition.strip()
             condition = condition.split(" ")
+
+            #print("Condition statment: " + str(condition))
 
             conditionL = condition[0]
             conditionEvaluator = condition[1]
             conditionR = condition[2]
 
-    print("Condition L: " + conditionL)
-    print("Condition R: " + conditionR)
+    #print("Condition L: " + conditionL)
+    #print("Condition R: " + conditionR)
 
     #Getting the Table that we are trying to search an item for the LHS
     leftTableVar = conditionL.split(".")[0]
@@ -1393,10 +1406,8 @@ def selectWhereJoin(cmd):
     rightTableVar = conditionR.split(".")[0]
     rightTableItem = conditionR.split(".")[1]
 
-    print("LHS TableVar: " + leftTableVar + " TableItem: " + leftTableItem)
-    print("RHS TableVar: " + rightTableVar + " TableItem: " + rightTableItem)
-
-    
+    #print("LHS TableVar: " + leftTableVar + " TableItem: " + leftTableItem)
+    #print("RHS TableVar: " + rightTableVar + " TableItem: " + rightTableItem)
 
     TablesList = []
 
@@ -1407,15 +1418,18 @@ def selectWhereJoin(cmd):
             tableVar = Tables[i].split(" ")[1]
             bufferTableVar = tableVarRep(tableName,tableVar)
             TablesList.append(bufferTableVar)
-    
+
+
+    #assining the custom objs their table Item
+    #LHS
     for i in range(len(TablesList)):
-        print("Table name: " + TablesList[i].TableName + " Table name var: " + TablesList[i].TableNameVar)
+        if TablesList[i].TableNameVar == leftTableVar:
+            TablesList[i].setItem(leftTableItem)
 
-
-
-        
-
-    
+    #RHS
+    for i in range(len(TablesList)):
+        if TablesList[i].TableNameVar == rightTableVar:
+            TablesList[i].setItem(rightTableItem)
 
     #Opening the database 
     fp = open(currentDB,'r')
@@ -1647,7 +1661,6 @@ def opLoop():
         elif "ALTER TABLE"in userCommand:
             alterTable(userCommand)
         elif "on" in userCommand or "ON" in userCommand:
-            print("CALLING: selectWhereJoin" )
             selectWhereJoin(userCommand)
         elif ("SELECT" in userCommand or "select " in userCommand) and "*" not in userCommand:
             selectWhere(userCommand)
