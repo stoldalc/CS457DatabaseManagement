@@ -108,11 +108,17 @@ def adjustArray(ar):
 class tableVarRep:
     def __init__(self, TableName, TableNameVar):
 
-        print("Table name is: " + TableName)
-        print("Table name var is: " + TableNameVar)
+        #print("Table name is: " + TableName)
+        #print("Table name var is: " + TableNameVar)
 
         self.TableName = TableName
         self.TableNameVar = TableNameVar
+    def setItem(self,TableItem):
+        self.TableItem = TableItem
+    
+    TableName = ""
+    TableNameVar = ""
+    TableItem = ""
 
 
 #This function sets the working scope
@@ -1112,29 +1118,146 @@ def selectStarVar(cmd):
 
     global currentDB
 
+    whereCondition = ""
 
     #Seperating the command from the intended database    
     if cmd.split(' ')[0].isupper():
         cmdSplit = cmd.split("SELECT * FROM ")
         Tables = cmdSplit[1].split("WHERE")[0]
+        whereCondition = cmdSplit[1].split("WHERE")[1]
         Tables = Tables.split(",")
 
         TablesList = []
 
         for i in range(len(Tables)):
+            Tables[i] = Tables[i].strip()
+            #print("Reading line: " + Tables[i])
             tableName = Tables[i].split(" ")[0]
             tableVar = Tables[i].split(" ")[1]
-            bufferTableVar = tableVarRep()
+            bufferTableVar = tableVarRep(tableName,tableVar)
+            TablesList.append(bufferTableVar)
 
     else:
         cmdSplit = cmd.split("select * from ")
-        Tables = cmdSplit[1].split("WHERE")[0]
-        if "," in Tables:
-            print("Going to new function")
-            selectStarVar(cmd)
+        Tables = cmdSplit[1].split("where")[0]
+        whereCondition = cmdSplit[1].split("where")[1]
+        Tables = Tables.split(",")
+
+        TablesList = []
+
+        #Loading the table variables into a tableVarRep custom obj
+        for i in range(len(Tables)):
+            Tables[i] = Tables[i].strip()
+            #print("Reading line: " + Tables[i])
+            tableName = Tables[i].split(" ")[0]
+            tableVar = Tables[i].split(" ")[1]
+            bufferTableVar = tableVarRep(tableName,tableVar)
+            TablesList.append(bufferTableVar)
+    
+
+    #Getting the where condition from the command
+    whereCondition = whereCondition.strip()
+    whereCondition = whereCondition.split(" ")
+    whereConditionL = whereCondition[0]
+    whereConditionR = whereCondition[2]
+    whereConditionEvaluator = whereCondition[1]
+
+    #Getting the Table that we are trying to search an item for the LHS
+    leftTableVar = whereConditionL.split(".")[0]
+    leftTableItem = whereConditionL.split(".")[1]
+
+    #Getting the Table that we are trying to search an item for the RHS
+    rightTableVar = whereConditionR.split(".")[0]
+    rightTableItem = whereConditionR.split(".")[1]
+
+    #print("LHS TableVar: " + leftTableVar + " TableItem: " + leftTableItem)
+    #print("RHS TableVar: " + rightTableVar + " TableItem: " + rightTableItem)
+
+
+    #assining the custom objs their table Item
+    #LHS
+    for i in range(len(TablesList)):
+        if TablesList[i].TableNameVar == leftTableVar:
+            TablesList[i].setItem(leftTableItem)
+
+    #RHS
+    for i in range(len(TablesList)):
+        if TablesList[i].TableNameVar == rightTableVar:
+            TablesList[i].setItem(rightTableItem)
+
+    #Opening the database 
+    fp = open(currentDB,'r')
+
+    #and copying the database to a string arr
+    databaseCopy = fp.readlines()
+
+    #close fp 
+    fp.close
+
+    #The case that the user is not within a database 
+    if not inDataBase():
+        print("-- !Failed to search table " + tableName + " not currently in a database.")
+        return
+
+    #The vase that the user wants to insert into a table that does not exist
+
+    LHSVarsInstances = []
+    RHSVarsInstances = []
+
+    currentSide = "L"
+
+    for i in range(len(TablesList)):
+        
+        #Search for the current TabesList[i].TableName
+        for j in range(len(databaseCopy)):
+
+            #Check if the current line is the start of the table
+            if databaseCopy[j] == (">>" + TablesList[i].TableName + "\n"):
+                
+                #If the line has been found we now start searching for the correct table item
+                for k in range(j,len(databaseCopy)):
+                    
+                    #Check if the current line is equal to the table item
+                    if TablesList[i].TableItem in databaseCopy[k]:
+                        
+                        #Start a loop at one position past where we found the variable def
+                        l = k+1
+                        #While we are not at a new variable append the items to the LHSVarsInstances List
+                        while databaseCopy[l][0] != "*":
+                            if currentSide == "L":
+                                buffer = databaseCopy[l].replace('$','')
+                                buffer = buffer.replace('\n','')
+                                LHSVarsInstances.append(buffer)
+                            elif currentSide == "R":
+                                buffer = databaseCopy[l].replace('$','')
+                                buffer = buffer.replace('\n','')
+                                RHSVarsInstances.append(buffer)
+                            l += 1
+                        if currentSide == "L":
+                            currentSide = "R"
+    #print("LHS Var instances: " + str(LHSVarsInstances))
+    #print("RHS Var instances: " + str(RHSVarsInstances))
+
+    #Find the matches
+    matchPositions = []
+    #Loop through the right hand side
+    for i in range(len(LHSVarsInstances)):
+        #For each right hand side
+        for j in range(len(RHSVarsInstances)):
+            if LHSVarsInstances[i] == RHSVarsInstances[j]:
+                buffer = []
+                buffer.append(i)
+                buffer.append(j)
+                matchPositions.append(buffer)
+    
+    print("Match Positions")
+    print(matchPositions)
 
 
 
+
+
+                
 
 
 
