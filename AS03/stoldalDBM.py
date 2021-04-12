@@ -510,14 +510,12 @@ def selectStar(cmd):
         cmdSplit = cmd.split("SELECT * FROM ")
         Tables = cmdSplit[1].split("WHERE")[0]
         if "," in Tables:
-            print("Going to new function")
             selectStarVar(cmd)
             return
     else:
         cmdSplit = cmd.split("select * from ")
         Tables = cmdSplit[1].split("WHERE")[0]
         if "," in Tables:
-            print("Going to new function")
             selectStarVar(cmd)
             return
 
@@ -1250,8 +1248,97 @@ def selectStarVar(cmd):
                 buffer.append(j)
                 matchPositions.append(buffer)
     
-    print("Match Positions")
-    print(matchPositions)
+    #print("Match Positions")
+    #print(matchPositions)
+
+
+    #Get the list of vars
+    varDefs = "-- "
+    for i in range(len(TablesList)):
+        #Loop through the databasecopy
+        for j in range(len(databaseCopy)):
+            #Check if the current line is equal to the table
+            if databaseCopy[j] == (">>" + TablesList[i].TableName + "\n"):
+                #Loop through the table
+                #starting at one postion pas the start of the table
+                k = j+1
+                while databaseCopy[k] != "<<\n":
+                    #If the current line is a variable defenetion
+                    if databaseCopy[k][0] == "*":
+                        #print("Found line: " + databaseCopy[k])
+                        buffer = databaseCopy[k]
+                        buffer = buffer.replace("*",'')
+                        buffer = buffer.replace("\n",'')
+                        buffer += "|"
+                        varDefs += buffer
+                    k += 1
+    varDefs = varDefs[:-1]
+    print(varDefs)
+
+    #Get a string for each matched position
+    varInstancePrint = "-- "
+    LHSPrint = ""
+    RHSPrint = ""
+    varPosition = 0
+    for i in range(len(matchPositions)):
+        #Find the start of the first table
+        for j in range(len(databaseCopy)):
+            #Check if the current line is equal to the LHS table
+            if databaseCopy[j] == (">>" + TablesList[0].TableName + "\n"):
+                #Loop through the table
+                k = j+1
+                while databaseCopy[k] != "<<\n":
+                    #Check if we are at a variable defnetion
+                    if databaseCopy[k][0] == "*":
+                        #print("Found line: " + databaseCopy)
+                        #Loop through the variable defenetions
+                        l = k +1
+                        varPosition = l + matchPositions[i][0]
+                        while databaseCopy[l][0] != "*":
+                            if l == varPosition:
+                                buffer = databaseCopy[l]
+                                buffer = buffer.replace("$","")
+                                buffer = buffer.replace("\n","")
+                                buffer += "|"
+                                LHSPrint += buffer
+                            l += 1
+                    k += 1
+                k = 0
+                l = 0
+            #Check if the current line is equal to the RHS table
+            elif databaseCopy[j] == (">>" + TablesList[1].TableName + "\n"):
+                #Loop through the table
+                k = j+1
+                while databaseCopy[k] != "<<\n":
+                    #Check if we are at a variable defnetion
+                    if databaseCopy[k][0] == "*":
+                        #print("Found line: " + databaseCopy)
+                        #Loop through the variable defenetions
+                        l = k +1
+                        varPosition = l + matchPositions[i][1]
+                        while databaseCopy[l][0] != "*" and databaseCopy[l] != "<<\n":
+                            #print("DatabaseCopy at " + str(l) + ": " + databaseCopy[l])
+                            if l == varPosition:
+                                buffer = databaseCopy[l]
+                                buffer = buffer.replace("$","")
+                                buffer = buffer.replace("\n","")
+                                buffer += "|"
+                                LHSPrint += buffer
+                            l += 1
+                        #print("Broke at end of variable")
+                    k += 1
+                k = 0
+                l = 0
+        varInstancePrint += LHSPrint
+        varInstancePrint += RHSPrint  
+        varInstancePrint = varInstancePrint[:-1]    
+        print(varInstancePrint)
+        varInstancePrint = "-- "
+        LHSPrint = ""
+        RHSPrint = ""
+
+        
+        
 
 
 
