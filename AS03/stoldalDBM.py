@@ -22,11 +22,97 @@ Symbol  |    Meaning
   <<    | End of a table
 """
 
+"""
+Possible solutions for select * from table(s) condition conditionExpression
+
+Command breakdown 
+
+| select  * from| 
+ 
+| "Table name" "Table Var" |
+
+| join type |
+
+| "Table name" "Table Var" |
+
+| on |
+
+| "Table Var.Table Var Def" = "Table Var.Table Var Def" |
+
+
+- Get nesecary tables 
+    -Load into a arr such as [[table0],[table1]]
+
+- get the condtion
+
+
+
+I need to find the format of the statments 
+
+"""
+
+
 currentDB = ""
 
 #For debuging
-printCommands = True
+printCommands = False
 
+
+
+"""
+************** Tool Functions **************
+"""
+#Function to check if the user is within a database
+def inDataBase():
+    global currentDB
+
+    if currentDB == "":
+        return False
+    else:
+        return True
+
+#Function to check if the requested table exist
+def doesTableExist(tName):
+    fp = open(currentDB,'r')
+
+    databaseCopy = fp.readlines()
+
+
+    for line in databaseCopy:
+        #print("CHECKING LINE: " + str(line) + " AGAINST:  >>" + str(tName))
+        if line == (">>" + tName +'\n'):
+            fp.close()
+            return True
+    
+    fp.close()
+    return False
+
+def cleanString(s):
+    s = s.strip()
+    s = s.replace('\n','')
+    s = s.replace('*','')
+    s = s.replace('$','')
+    
+    return s
+
+def adjustArray(ar):
+    for i in range(len(ar)):
+        ar[i] = ar[i]-1
+    return ar
+
+
+"""
+************** Custom Objs **************
+"""
+
+class tableVarRep:
+    def __init__(self, TableName, TableNameVar):
+
+        print("Table name is: " + TableName)
+        print("Table name var is: " + TableNameVar)
+
+        self.TableName = TableName
+        self.TableNameVar = TableNameVar
 
 
 #This function sets the working scope
@@ -140,11 +226,11 @@ def createTable(cmd):
     #Seperating the command from the intended database  
 
     if cmd.split(' ')[0].isupper():  
-        print("splitting on upper")
-        print("cmd.split[0]: " + str(cmd.split((' ')[0])) )
+        #print("splitting on upper")
+        #print("cmd.split[0]: " + str(cmd.split((' ')[0])) )
         cmdSplit = cmd.split("CREATE TABLE ")
     else:
-        print("splitting on upper")
+        #print("splitting on upper")
         cmdSplit = cmd.split("create table ")
 
     tableName = cmdSplit[1].split('(')[0]
@@ -411,11 +497,25 @@ def selectStar(cmd):
 
     global currentDB
 
+
+
     #Seperating the command from the intended database    
     if cmd.split(' ')[0].isupper():
         cmdSplit = cmd.split("SELECT * FROM ")
+        Tables = cmdSplit[1].split("WHERE")[0]
+        if "," in Tables:
+            print("Going to new function")
+            selectStarVar(cmd)
+            return
     else:
         cmdSplit = cmd.split("select * from ")
+        Tables = cmdSplit[1].split("WHERE")[0]
+        if "," in Tables:
+            print("Going to new function")
+            selectStarVar(cmd)
+            return
+
+        
 
 
     tableName = cmdSplit[1]
@@ -564,7 +664,7 @@ def insertInto(cmd):
             #parse theought the variable instances
             for j in range(i,len(databaseCopy)+len(newVars)):
                 #if the current line is a variable
-                print("J:" + str(j))
+                #print("J:" + str(j))
                 if databaseCopy[j][0] == "*":
                     k = j + 1 
                     #Parse until we reach a diffrent bariable
@@ -575,7 +675,7 @@ def insertInto(cmd):
                         k += 1
                     #Add encoding to the new variable
                     if len(newVars) > 0:
-                        print("K is: " +  str(k))
+                        #print("K is: " +  str(k))
                         buffer = "$" +  newVars.pop(0) + '\n'
                         #append the new variable
                         databaseCopy.insert(k,buffer)
@@ -879,6 +979,8 @@ def selectWhere(cmd):
 
     global currentDB
 
+    
+
 
     #Seperating the command from the intended database    
     if cmd.split(' ')[0].isupper():
@@ -1000,48 +1102,41 @@ def selectWhere(cmd):
             if j != len(masterPrintArguments)-1:
                 print("|",end="")
         print()
-        
 
-"""
-************** Tool Functions **************
-"""
-#Function to check if the user is within a database
-def inDataBase():
+def selectStarVar(cmd): 
+
+    #For debuging
+    global printCommands
+    if printCommands:
+        print(cmd)
+
     global currentDB
 
-    if currentDB == "":
-        return False
+
+    #Seperating the command from the intended database    
+    if cmd.split(' ')[0].isupper():
+        cmdSplit = cmd.split("SELECT * FROM ")
+        Tables = cmdSplit[1].split("WHERE")[0]
+        Tables = Tables.split(",")
+
+        TablesList = []
+
+        for i in range(len(Tables)):
+            tableName = Tables[i].split(" ")[0]
+            tableVar = Tables[i].split(" ")[1]
+            bufferTableVar = tableVarRep()
+
     else:
-        return True
-
-#Function to check if the requested table exist
-def doesTableExist(tName):
-    fp = open(currentDB,'r')
-
-    databaseCopy = fp.readlines()
+        cmdSplit = cmd.split("select * from ")
+        Tables = cmdSplit[1].split("WHERE")[0]
+        if "," in Tables:
+            print("Going to new function")
+            selectStarVar(cmd)
 
 
-    for line in databaseCopy:
-        #print("CHECKING LINE: " + str(line) + " AGAINST:  >>" + str(tName))
-        if line == (">>" + tName +'\n'):
-            fp.close()
-            return True
-    
-    fp.close()
-    return False
 
-def cleanString(s):
-    s = s.strip()
-    s = s.replace('\n','')
-    s = s.replace('*','')
-    s = s.replace('$','')
-    
-    return s
 
-def adjustArray(ar):
-    for i in range(len(ar)):
-        ar[i] = ar[i]-1
-    return ar
+
 
 #opLoop() - Operational Loop that makes up the user interface allowing users to input commands until .exit is called
 def opLoop():
