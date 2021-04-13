@@ -1350,6 +1350,8 @@ def selectWhereJoin(cmd):
 
     Tables = []
 
+    isLeftOuterJoin = False
+
     if cmd.split(' ')[0].isupper():
 
         cmdSplit = cmd.split("SELECT * FROM ")
@@ -1394,6 +1396,26 @@ def selectWhereJoin(cmd):
             conditionL = condition[0]
             conditionEvaluator = condition[1]
             conditionR = condition[2]
+        elif "left outer join" in cmd:
+            isLeftOuterJoin = True
+            buffer = cmdSplit[1].split("left outer join")[0]
+            buffer = buffer.strip()
+            Tables.append(buffer)
+            secondTable = cmdSplit[1].split("left outer join")[1]
+            buffer = secondTable.split("on")[0]
+            buffer = buffer.strip()
+            Tables.append(buffer)
+
+            condition = cmd.split("on")[1]
+            condition = condition.strip()
+            condition = condition.split(" ")
+
+            #print("Condition statment: " + str(condition))
+
+            conditionL = condition[0]
+            conditionEvaluator = condition[1]
+            conditionR = condition[2]
+
 
     #print("Condition L: " + conditionL)
     #print("Condition R: " + conditionR)
@@ -1486,15 +1508,25 @@ def selectWhereJoin(cmd):
 
     #Find the matches
     matchPositions = []
+    matchFound = False
     #Loop through the right hand side
     for i in range(len(LHSVarsInstances)):
         #For each right hand side
         for j in range(len(RHSVarsInstances)):
+           #print("Checking: " + LHSVarsInstances[i])
             if LHSVarsInstances[i] == RHSVarsInstances[j]:
+                matchFound = True
                 buffer = []
                 buffer.append(i)
                 buffer.append(j)
                 matchPositions.append(buffer)
+        if matchFound == False and  isLeftOuterJoin == True:
+            buffer = []
+            buffer.append(i)
+            buffer.append(-1)
+            matchPositions.append(buffer)
+        elif matchFound == True:
+            matchFound = False
     
     #print("Match Positions")
     #print(matchPositions)
@@ -1566,12 +1598,15 @@ def selectWhereJoin(cmd):
                         varPosition = l + matchPositions[i][1]
                         while databaseCopy[l][0] != "*" and databaseCopy[l] != "<<\n":
                             #print("DatabaseCopy at " + str(l) + ": " + databaseCopy[l])
-                            if l == varPosition:
+                            if l == varPosition and matchPositions[i][1] != -1:
                                 buffer = databaseCopy[l]
                                 buffer = buffer.replace("$","")
                                 buffer = buffer.replace("\n","")
                                 buffer += "|"
-                                LHSPrint += buffer
+                                RHSPrint += buffer
+                            elif matchPositions[i][1] == -1:
+                                RHSPrint += "|"
+                                break
                             l += 1
                         #print("Broke at end of variable")
                     k += 1
