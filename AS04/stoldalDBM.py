@@ -773,6 +773,9 @@ def updateWhere(cmd):
         databaseCopy = processDatabaseCopys[currentProcess]
     
     
+    if databaseCopy[0] == "*L*\n":
+        print("-- Error: " + tableName + " Flights is locked!")
+        return
 
     whereValuePositions = []
     currentCount = 0
@@ -1656,8 +1659,11 @@ def beginTransaction(cmd):
     fp.close
 
     #Append the coppy of the new database to the list of databasecopys
-    buffer = databaseCopy
+    buffer = databaseCopy[:]
     processDatabaseCopys.append(buffer)
+
+    #print("buffer copy before ")
+    #print(buffer)
 
     #Incriment the index position of the database copys
     currentProcess += 1
@@ -1666,6 +1672,8 @@ def beginTransaction(cmd):
 
     #Insert the lock symbol to the databaseCopy
     databaseCopy.insert(0,"*L*\n")
+    #print("buffer copy after ")
+    #print(buffer)
 
     #Write database with lock to top of file
     fp = open(currentDB,'w')
@@ -1674,7 +1682,6 @@ def beginTransaction(cmd):
         fp.write(line)
 
     fp.close()
-
 
 def commitTransaction(cmd):
     #For debuging
@@ -1691,20 +1698,23 @@ def commitTransaction(cmd):
         print("-- !Failed to commit transaction not currently in a database.")
         return  
     
-    #Write databaseCopy to file
-    fp = open(currentDB,'w')
+    
 
     #if current Process is qual to -1 there are no transactions
     if currentProcess == -1:
         print("-- !Failed to commit transaction no current transactions.")
         return
-
-    #print(processDatabaseCopys[currentProcess])
-
-    #Write the transaction datbase copy to file
-    for line in processDatabaseCopys[currentProcess]:
-        fp.write(line)
-    fp.close()
+    if processDatabaseCopys[currentProcess][0] != "*L*\n":
+        print("If passed")
+        #Write databaseCopy to file
+        fp = open(currentDB,'w')
+        #Write the transaction datbase copy to file
+        for line in processDatabaseCopys[currentProcess]:
+            fp.write(line)
+        fp.close()
+        print("-- Transaction committed.")
+    else:
+        print("-- Transaction abort.")
 
     #Removing the database copy from the list
     processDatabaseCopys.pop(currentProcess)
@@ -1712,7 +1722,7 @@ def commitTransaction(cmd):
     #Reduce the current process counter
     currentProcess -= 1
 
-    print("-- Transaction committed.")
+    
 
     
     
@@ -1812,6 +1822,7 @@ def opLoop():
         elif "begin transaction" in userCommand:
             beginTransaction(userCommand)
         elif "commit" in userCommand:
+            print("Commit called")
             commitTransaction(userCommand)
         elif ".EXIT" in userCommand or ".exit" in userCommand:
             print("-- All done.")
