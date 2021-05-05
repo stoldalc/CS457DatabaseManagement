@@ -774,7 +774,7 @@ def updateWhere(cmd):
     
     
     if databaseCopy[0] == "*L*\n":
-        print("-- Error: " + tableName + " Flights is locked!")
+        print("-- Error: Table " + tableName + "  is locked!")
         return
 
     whereValuePositions = []
@@ -1705,7 +1705,7 @@ def commitTransaction(cmd):
         print("-- !Failed to commit transaction no current transactions.")
         return
     if processDatabaseCopys[currentProcess][0] != "*L*\n":
-        print("If passed")
+        #print("If passed")
         #Write databaseCopy to file
         fp = open(currentDB,'w')
         #Write the transaction datbase copy to file
@@ -1770,20 +1770,29 @@ def opLoop():
             print("-- All done.")
             break
 
+        if userCommand.split("--")[0] != "":
+            userCommand = userCommand.split("--")[0]
+            userCommand = userCommand.strip()
+        #print("USER COMMAND:  " + userCommand)
 
         #In the case on the first enter from the user the command does not end
         # with a ';' keep looping until a command ends in ';'
         if userCommand != '' and "--" not in userCommand:
+            #print("In if")
             if (userCommand[len(userCommand)-1] != ';') and userCommand != (".EXIT" or ".exit") :
                 while True:
                     userCommand += input()
                     if userCommand[len(userCommand)-1] == ';':
                         break
         if userCommand == '':
+            #print("Passing")
             pass
         #Strips semicolons from command
         userCommand = userCommand.replace(';','')
 
+        #print("USER COMMAND:  " + userCommand)
+
+        
 
 
         
@@ -1822,7 +1831,6 @@ def opLoop():
         elif "begin transaction" in userCommand:
             beginTransaction(userCommand)
         elif "commit" in userCommand:
-            print("Commit called")
             commitTransaction(userCommand)
         elif ".EXIT" in userCommand or ".exit" in userCommand:
             print("-- All done.")
